@@ -6,6 +6,12 @@ genesis_block = {
 blockchain = [genesis_block]
 open_transactions = []
 owner = 'Damien'
+participants = {'Damien'}
+
+
+def hash_block(block):
+    """ creates a hash for the block """
+    return '-'.join([str(block[key]) for key in block])
 
 
 def get_last_blockchain_value():
@@ -16,7 +22,7 @@ def get_last_blockchain_value():
 
 
 def add_transaction(recipient, sender=owner, amount=1.0):
-    """ Append a new as value as well as the last blockchain value to the blockhain 
+    """ Append a new as value as well as the last blockchain value to the blockhain
 
         Arguments:
             :sender: The sender of the coins.
@@ -24,29 +30,27 @@ def add_transaction(recipient, sender=owner, amount=1.0):
             :amount: The amount of coins sent  with the transaction (default = 1.0)
     """
     transaction = {
-        'sender': sender, 
-        'recipient': recipient, 
+        'sender': sender,
+        'recipient': recipient,
         'amount': amount
     }
 
     open_transactions.append(transaction)
+    participants.add(sender)
+    participants.add(recipient)
 
 
 def mine_block():
     """ Create a new hash """
     last_block = blockchain[-1]
-    hash_block = ''
-    for key in last_block:
-        value = last_block[key]
-        hash_block = hash_block + str(value)
-
-    print(hash_block)
+    hashed_block = hash_block(last_block)
     block = {
-        'previous_hash': 'XYZ',
+        'previous_hash': hashed_block,
         'index': len(blockchain),
         'transactions': open_transactions
     }
     blockchain.append(block)
+    print(hashed_block)
 
 
 def get_transaction_value():
@@ -72,32 +76,25 @@ def print_blockchain_elements():
 
 def verify_chain():
     """ checks if the first block of the current blockchain equal to the previous blockchain"""
-    is_valid = True
-
-    for block_index in range(len(blockchain)):
-        if block_index == 0:
+    for (index, block) in enumerate(blockchain):
+        if index == 0:
             continue
 
-        elif blockchain[block_index][0] == blockchain[block_index - 1]: # is the first block of the current blockchain equal to the previous blockchain
-            is_valid = True
+        if block['previous_hash'] != hash_block(blockchain[index - 1]):
+            return False
 
-        else:
-            is_valid = False
-            break
-
-        block_index += 1
-
-    return is_valid
+    return True
 
 
 waiting_for_input = True
 
-# user choice 
+# user choice
 while waiting_for_input:
     print('Please choose')
     print('1: Add a new transaction value')
     print('2: mine a new block')
     print('3: Output the blockchain')
+    print('4: Output participants')
     print('h: maniulate my blockchain')
     print('q: Quit')
 
@@ -115,9 +112,20 @@ while waiting_for_input:
     elif user_choice == '3':
         print_blockchain_elements()
 
+    elif user_choice == '4':
+        print(participants)
+
     elif user_choice == 'h':
         if len(blockchain) >= 1:
-            blockchain[0] = [2]
+            blockchain[0] = {
+                'previous_hash': '',
+                'index': 0,
+                'transactions': [{
+                    'sender': 'Chris',
+                    'recipient': 'John',
+                    'amount': 100
+                }]
+            }
 
     elif user_choice == 'q':
         waiting_for_input = False
@@ -129,9 +137,10 @@ while waiting_for_input:
 
     print("<------------------------------------------------------------------------>")
 
-    # if not verify_chain():
-    #     print_blockchain_elements()
-    #     print('invalid blockchain')
-    #     break
+    if not verify_chain():
+        print_blockchain_elements()
+        print('invalid blockchain')
+        # Break out of the loop
+        break
 
 print('Done!')
